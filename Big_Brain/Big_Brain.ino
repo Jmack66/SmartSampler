@@ -10,8 +10,10 @@
 PWMServo servo;
 int ir_analog;
 bool ir_digital;
-int stepperPins[4] = {STEPPER1,STEPPER2,STEPPER3,STEPPER4};
-int seq[8][4] = {{1,0,0,0},{1,1,0,0},{0,1,0,0},{0,1,1,0},{0,0,1,0},{0,0,1,1},{0,0,0,1},{1,0,0,1}};
+int stepperPins[4] = {STEPPER1, STEPPER2, STEPPER3, STEPPER4};
+int seq[8][4] = {{1, 0, 0, 0}, {1, 1, 0, 0}, {0, 1, 0, 0}, {0, 1, 1, 0}, {0, 0, 1, 0}, {0, 0, 1, 1}, {0, 0, 0, 1}, {1, 0, 0, 1}};
+int setpoint;
+
 void setup() {
   pinMode(IR_A, INPUT);
   pinMode(IR_D, INPUT);
@@ -21,39 +23,36 @@ void setup() {
   pinMode(STEPPER4, OUTPUT);
   servo.attach(2);
   Serial.begin(9600);
+  setpoint = getIRA();
 }
 
 void loop() {
-  // check ir 
-  // if object is present, set object state to true ,servo rotate for given time
-  // check ir
-  // if object is gone, back servo would dispense
-  // stepper motor rotates quarter rotation
-  stepperController();
-  getIR();
+  //rotate until an object is present, allow pourer
+  while(getIRD()){
+    stepperController();
+    }
+    servoController();
 }
 
-void getIR(){
+int getIRA() {
   ir_analog = analogRead(IR_A);
-  Serial.println(ir_analog);
+  return ir_analog;
+}
+bool getIRD() {
   ir_digital = digitalRead(IR_D);
+  return ir_digital;
+}
+void servoController(){
+  servo.write(90);
+  delay(250);
+  servo.write(0);
   }
 
-void stepperController(){
-  for(int i = 0; i < 128; i++){
-    for(int s = 0; s < 8; s++){
-      for(int p = 0; p < 4; p++){
+void stepperController() {
+    for (int s = 0; s < 8; s++) {
+      for (int p = 0; p < 4; p++) {
         delay(1);
-        digitalWrite(stepperPins[p],seq[s][p]);
-        }
+        digitalWrite(stepperPins[p], seq[s][p]);
       }
     }
-  }
-
-
-
-
-
-
-
-  
+}
