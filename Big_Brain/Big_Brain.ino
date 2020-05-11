@@ -1,73 +1,88 @@
 #include <Servo.h>
+#include <Stepper.h>
+#define STEPS 513
 #define FRONT_PIN 3
 #define BACK_PIN 3
-#define STEPPER1 27
-#define STEPPER2 26
-#define STEPPER3 25
-#define STEPPER4 24
+#define SPEED 30
+#define S11 27
+#define S12 26
+#define S13 25
+#define S14 24
+#define S21 27
+#define S22 26
+#define S23 25
+#define S24 24
+#define POUR_TIME 10 //time in miliseconds
 
-Servo servo;
-int ir_analog;
-bool ir_digital;
-int stepperPins[4] = {STEPPER1, STEPPER2, STEPPER3, STEPPER4};
-int seq[8][4] = {{1, 0, 0, 0}, {1, 1, 0, 0}, {0, 1, 0, 0}, {0, 1, 1, 0}, {0, 0, 1, 0}, {0, 0, 1, 1}, {0, 0, 0, 1}, {1, 0, 0, 1}};
+Servo nozzle;
+Stepper disc(STEPS, S11, S12, S13, S14);
+Stepper drop(STEPS, S21, S22, S23, S24);
 
-class IR{
+
+
+class Infrared {
   private:
-    int ir_d;
-  public:
+    bool ir_d;
     int pin;
-  void set(int inpin){
-      pin = inpin;
-      pinMode(pin, INPUT);
+  public:
+    Infrared(int pin){
+      this->pin = pin;
+      pinMode(pin,INPUT); 
+      }
+
+    bool getIR() {
+      ir_d = digitalRead(pin);
+      return ir_d;
     }
-  int getIR(){
-    ir_d = digitalRead(pin);
-    return ir_d;
-    }
-  };
-struct state{
+};
+Infrared frontSensor = Infrared(FRONT_PIN);
+Infrared backSensor = Infrared(BACK_PIN);
+struct state {
   bool drop = false;
   bool rotate = false;
   bool collect = false;
   bool pour = false;
-  bool error = false; 
+  bool error = false;
   bool startup = false;
-  
-  }sampler;
-  
+
+} sampler;
 void setup() {
-  pinMode(STEPPER1, OUTPUT);
-  pinMode(STEPPER2, OUTPUT);
-  pinMode(STEPPER3, OUTPUT);
-  pinMode(STEPPER4, OUTPUT);
-  servo.attach(2);
-  IR frontSensor;
-  IR backSensor;
-  frontSensor.set(FRONT_PIN);
-  backSensor.set(BACK_PIN);
+  nozzle.attach(2);
+  nozzle.write(0);
+  disc.setSpeed(SPEED);
+  drop.setSpeed(SPEED);
+  Serial.begin(9600);
 }
+
+void dropCup() {
+  while (backSensor.getIR()) {
+    drop.step(5);
+  }
+}
+
+void rotate() {
+  while (frontSensor.getIR()) {
+    disc.step(5);
+  }
+}
+void dispense(int pour_time) {
+  nozzle.write(90);
+  delay(pour_time);
+  nozzle.write(0);
+}
+
+void startup(bool check) {
+  if (check) {
+    dropCup();
+    drop.step(50); //prime the next cup
+    rotate();
+    Serial.println("Startup complete");
+    sampler.startup = false;
+  }
+}
+
+
 
 void loop() {
 
 }
-
-
-//int getIRA() {
-//  ir_analog = analogRead(IR_A);
-//  return ir_analog;
-//}
-//bool getIRD() {
-//  ir_digital = digitalRead(IR_D);
-//  return ir_digital;
-//}
-//
-//
-//void stepperController() {
-//    for (int s = 0; s < 8; s++) {
-//      for (int p = 0; p < 4; p++) {
-//        delay(1);
-//        digitalWrite(stepperPins[p], seq[s][p]);
-//      }
-//    }
-//}
