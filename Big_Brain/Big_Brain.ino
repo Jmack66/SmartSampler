@@ -27,6 +27,7 @@ struct state {
   bool startup = false;
 
 } sampler;
+
 void setup() {
   nozzle.attach(2);
   nozzle.write(0);
@@ -37,27 +38,24 @@ void setup() {
   pinMode(BACK_PIN,INPUT);
   sampler.startup = true;
 }
-
 void dropCup() {
   while (backSensor()) {
-    Serial.println(backSensor());
-    //Serial.println(frontSensor());
     drop.step(1);
   }
   Serial.println("cup dropped stopping");
-  //drop.step(10);//prime the next cup
+  genRotate(&drop, 160);
 }
-
 void rotate() {
   while (frontSensor()) {
-    Serial.println("now rotating");
     disc.step(1);
   }
+  Serial.println("done rotating");
 }
 
 bool frontSensor(){
   return digitalRead(FRONT_PIN);
   }
+  
 bool backSensor(){
   return digitalRead(BACK_PIN);
   }
@@ -66,14 +64,22 @@ void dispense(int pour_time) {
   delay(pour_time);
   nozzle.write(0);
 }
-
+void genRotate(Stepper* stepper, int turns){
+  int i = 0;
+  while(i <= turns){
+    stepper->step(1);
+    Serial.println("prime");
+    i++;
+    }
+  }
 void startup(bool check) {
   if (check) {
     dropCup();
-    disc.step(160);
-    Serial.println("priming next cup");
-    delay(5000);
+    delay(1000);
+    genRotate(&disc, 160);
+    delay(100);
     dropCup();
+    delay(100);
     rotate();
     Serial.println("Startup complete");
     sampler.startup = false;
@@ -82,5 +88,4 @@ void startup(bool check) {
 
 void loop() {
   startup(sampler.startup);
-  
 }
