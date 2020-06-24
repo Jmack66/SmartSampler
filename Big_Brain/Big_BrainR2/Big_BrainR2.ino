@@ -27,7 +27,7 @@ Stepper drop(STEPS, S21, S22, S23, S24);
 SoftwareSerial bluetooth(RX_PIN, TX_PIN);
 int val = 0;
 int sampled = 0;
-bool check = false;
+bool on_state = false;
 void setup() {
   disc.setSpeed(SPEED);
   drop.setSpeed(SPEED);
@@ -104,6 +104,7 @@ void startup() {
   while (!digitalRead(ON_PIN)) {
     //wait for the on button to be pressed
   }
+  on_state = true;
   bToothWelcome();
   dropCup();
   genRotate(&disc, 511);
@@ -122,5 +123,10 @@ void cycle() {
 }
 
 void loop() {
+  while(on_state){
   cycle();
+  if(!digitalRead(ON_PIN)){
+    on_state = false;
+    }
+  }
 }
